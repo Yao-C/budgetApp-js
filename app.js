@@ -34,7 +34,7 @@ var budgetController =(function() {
 
   var calculateTotal = function(type) {
     var sum = 0;
-    data.allItems[type].forEach(function(current){
+    data.allItems[type].forEach(function(current) {
       sum += current.value;
     });
     data.totals[type] = sum;
@@ -68,6 +68,20 @@ var budgetController =(function() {
       return newItem;
     },
 
+    deleteItem: function(type, id) {
+      var ids, index;
+      
+      ids = data.allItems[type].map(function(current) {
+        return current.id;
+      });
+
+      index = ids.indexOf(id);
+
+      if(index !== -1) {
+        data.allItems[type].splice(index, 1); // Start from splice and delete 1 item
+      }
+    },
+
     calculateBudget: function() {
       // Calculate total income and expenses
       calculateTotal('exp');
@@ -92,6 +106,7 @@ var budgetController =(function() {
         percentage: data.percentage
       };
     },
+
 
     // Use budgetController.testing() to check on the console
     testing: function() {
@@ -140,7 +155,8 @@ var UIController =(function() {
     budgetLabel: '.budget__value',
     incomeLabel: '.budget__income--value',
     expensesLabel: '.budget__expenses--value',
-    percentageLabel: '.budget__expenses--percentage' 
+    percentageLabel: '.budget__expenses--percentage',
+    container: '.container'
   };
   return {
     getDOMstrings: function() {
@@ -175,6 +191,11 @@ var UIController =(function() {
 
       // Insert HTML into the DOM
       document.querySelector(element).insertAdjacentHTML('beforeend', newHtml);
+    },
+
+    deleteListItem: function(selectorID) {
+      var el = document.getElementById(selectorID);
+      el.parentNode.removeChild(el); // Can only delete child element
     },
 
     clearFields: function() {
@@ -231,6 +252,9 @@ var controller =(function(budgetCtrl, UICtrl) {
       } 
     });
 
+    // Event Delegation because of event bubbling
+    document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
+    
   };
 
   var updateBudget = function() {
@@ -263,10 +287,27 @@ var controller =(function(budgetCtrl, UICtrl) {
       // 5. Calculate and update the budget
       updateBudget();
     }
-    
+      // console.log("It works!");
+  };
 
+  var ctrlDeleteItem = function(event) {
+    var itemID, splitID, type, ID;
+    itemID = event.target.parentNode.parentNode.parentNode.parentNode.id;
+    if (itemID) {
+      // f.ex. "inc-1"
+      splitID = itemID.split('-');
+      type = splitID[0];
+      ID = parseInt(splitID[1]);
 
-    // console.log("It works!");
+      // 1. Delete the item from data structure
+      budgetCtrl.deleteItem(type, ID);
+
+      // 2. Delete the item from the UI
+      UICtrl.deleteListItem(itemID);
+
+      // 3. Update and show the new budget
+      updateBudget();
+    }
   };
 
   return {
